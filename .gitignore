@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Build and packaged distributions
+build/
+dist/
+*.spec
+
+# Local runtime, logs, and state
+runtime/
+*.log
+*.pid
+*.pids
+jarvis-state.json
+jarvis-pipeline-log.json
+jarvis-memory.db
+jarvis-io-analytics.db
+quantum-report.json
+stasis.json
+scramble-salt.json
+wf-baseline.json
+jarvis-port-modes.json
+allow_list.json
+throttle-state.json
+
+# Generated or local knowledge/response data
+cybersec_protective_scripts_db/
+vector-db/cybersec_protective_scripts_db/
+jarvis-responses/__pycache__/
+graphify-out/
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.vscode/
+
+# Nested or external checkouts
+Jarvis Prime/
+Jarvis Prime CyberSec/
+Jarvis Prime CyberSecDeck/
+autoresearch/
