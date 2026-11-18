@@ -1,5 +1,9 @@
 # JARVIS PRIME
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Platform: Windows](https://img.shields.io/badge/Platform-Windows-0078D4.svg)](#requirements)
+
+
 JARVIS PRIME is a Windows-focused defensive security suite that combines
 network and Windows event monitoring, automatic firewall containment, local
 semantic retrieval of protective scripts, a real-time process/I/O dashboard,
@@ -15,6 +19,105 @@ external dependency rather than as a file guaranteed to be present here.
 > Windows Firewall rules, stop services, create scheduled tasks, and execute
 > generated PowerShell/Python. Test in a disposable environment first and
 > review generated responses before enabling live mode.
+
+## Feature catalog
+
+### Defensive monitoring
+
+- **Windows Firewall containment**: baselines external listener bindings,
+  detects newly exposed ports, blocks unexpected inbound listeners, locks Ollama
+  to loopback, and can block public attacker IPs.
+- **Windows Security event monitoring**: detects failed logons, new accounts,
+  administrator-group changes, new services, and suspicious outbound activity.
+- **Network threat analysis**: analyzes `netstat` connections, privileged/
+  registered/ephemeral port entropy, and Rule-30 cellular-automaton chaos.
+- **Forensic snapshots**: collects connections, users, processes, and recent
+  Windows Security events for incident review.
+- **Real-time service tracking**: starts or stops Windows Search through
+  Search Guardian and reports service transitions.
+
+### Intelligence and response
+
+- **Semantic mitigation retrieval**: uses ChromaDB and
+  `all-MiniLM-L6-v2` embeddings to find protective scripts.
+- **Threat classification**: identifies brute force, privilege escalation,
+  new service, exposed port, suspicious outbound, high-entropy, and unknown threats.
+- **Rule-30 response scramble**: varies candidate selection using a
+  persistent hash/salt.
+- **Novel-threat research**: generates and indexes a typed mitigation script
+  when a semantic match exceeds the novelty threshold.
+- **Safety policy**: defaults to review/dry-run mode; live execution requires
+  an explicit `approved_live` policy and appropriate Windows permissions.
+- **Stale-path recovery**: remaps old response-script locations into the
+  active bundled response directory and converts misclassified Bash/PowerShell
+  responses to the correct executable format.
+- **Persistent state**: tracks byte offsets, seen threat hashes, amendment
+  counters, response counters, and response history.
+
+### Security dashboard
+
+- **Loopback-only web UI**: runs locally at `http://127.0.0.1:8765`.
+- **Bearer-token protection**: API and SSE requests require the token stored in
+  `runtime\dashboard-token`.
+- **Live Server-Sent Events**: streams process snapshots and kernel I/O events.
+- **Kernel I/O view**: live process read/write bytes, rates, derivation labels,
+  open-file hints, flags, and security events.
+- **Process table**: CPU, memory, threads, network connections, I/O totals,
+  component classification, and sortable process columns.
+- **RAG port status**: exposed listeners are labeled Red/Amber/Green:
+  - **Green** — matched to the known-safe baseline.
+  - **Amber** — open but not matched and needs review.
+  - **Red** — newly exposed, manipulated, or an unexpected shell/interpreter
+    may be exposing the port.
+- **Plain-language port explanations**: explains what is open, blocked,
+  stopped, matched, or suspicious for non-technical users.
+- **Port dropdown controls**: block an inbound port, block and stop the
+  owning process, or restore/unblock the port.
+- **Browser and Windows notifications**: alerts on new Red port signatures
+  without repeatedly notifying for the same unchanged state.
+- **Firewall rule view**: lists active JARVIS `WF-*` firewall rules.
+- **Alert log view**: streams recent intrusion and response log entries.
+- **Analytics dashboard**: disk reads/writes, network rates, CPU share,
+  kernel/user activity, component I/O, and five-minute/one-hour/24-hour windows.
+- **Memory database**: security-event and metric history with retention controls.
+- **Transmission pipeline**: reports collection, queue fan-out, SSE delivery,
+  subscriber, byte, tick, and disconnect counters.
+- **Process allow-list**: discovers processes and saves approved names for
+  outbound-throttle behavior.
+- **Graph hypotheses**: displays cached Graphify hypotheses and graph metrics.
+- **Autoresearch metrics**: security score, violation/refusal rates, scramble
+  diversity, performance findings, and research iteration history.
+
+### Dashboard controls
+
+The Overview tab can launch or schedule:
+
+- Quantum scan
+- Scramble tuning
+- Web-Fortress setup, monitoring, and scheduled auto-block mode
+- Intruder-Protocol installation and monitoring
+- Windows hardening
+- JARVIS PRIME one-shot or daemon mode
+- Autoresearch one-shot or daemon mode
+- Search Guardian
+- Outbound throttle dry-run or live mode
+
+### Outbound throttle
+
+- Rule-30-derived throttle levels and compression settings.
+- Live process/upload status table.
+- 30-minute browser-grace behavior.
+- Allow-list-based exception handling.
+- Dry-run mode for safe review before live throttling.
+
+### Desktop controller
+
+- Tkinter Windows control window for running JARVIS in least-privilege mode.
+- Starts the loopback dashboard, JARVIS loop, Search Guardian, Quantum
+  Analyzer, and optional PowerShell watchers.
+- Enforces review/dry-run by default.
+- Per-user Startup-folder installation without an administrator scheduled task.
+- Packaged with PyInstaller under `dist\JarvisPrime\`.
 
 ## What is implemented
 
@@ -305,7 +408,9 @@ and should only be enabled on a disposable, elevated test host.
 
 ## Dashboard API
 
-The dashboard is bound to loopback, but it currently has no authentication.
+The dashboard is bound to loopback and requires the dashboard bearer token for
+API and SSE requests. Obtain the token from `runtime\dashboard-token` or use
+the `/api/token` bootstrap endpoint exposed by the local dashboard.
 Useful endpoints include:
 
 | Endpoint | Function |
@@ -323,8 +428,12 @@ Useful endpoints include:
 | `GET /api/secmetrics` | Security/performance research metrics |
 | `GET /api/pipeline-log` | SSE pipeline counters |
 | `GET /api/graph-hypotheses` | Cached Graphify hypotheses |
+| `GET /api/listeners` | Exposed listener inventory, labels, risk, and mode |
+| `GET /api/all-procs` | Processes available for allow-list selection |
+| `GET /api/throttle-state` | Current outbound-throttle state |
 | `POST /api/run/<name>` | Run a configured dashboard job |
 | `POST /api/allow-list` | Replace the process allow-list |
+| `POST /api/port-control` | Block, stop, or restore a controlled port |
 
 ## Areas for improvement
 
@@ -337,9 +446,10 @@ Useful endpoints include:
 2. **Add an execution policy.** Generated or retrieved scripts should default
    to review or dry-run, require explicit approval for firewall/service changes,
    and record the exact command, exit code, and user identity.
-3. **Authenticate and authorize the dashboard.** Keep loopback binding, add a
-   token or Windows-integrated access check, validate endpoint names, and
-   protect the allow-list write endpoint.
+3. **Harden dashboard authorization.** The dashboard now uses a persistent
+   bearer token, but endpoint authorization should be extended with
+   Windows-integrated identity checks, tighter CORS/Origin rules, one-time
+   bootstrap protection, and stricter action-name validation.
 4. **Replace broad exception swallowing.** Several monitor, dashboard, and
    PowerShell paths continue after failures without durable error reporting.
    Record structured errors and distinguish unavailable telemetry from a clean
@@ -445,7 +555,12 @@ permissions; the controller never enables those settings automatically.
 
 ## License and provenance
 
-No license file was present in this snapshot. Add an explicit license before
-redistributing the project. The protective-script corpus describes itself as
-adapted from CIS, Microsoft, NIST CSF, NCSC, and industry guidance; verify
-source attribution and licensing for each redistributed script.
+JARVIS PRIME is distributed under the
+[MIT License](LICENSE).
+
+The protective-script corpus includes defensive examples adapted from or
+inspired by Windows, Linux, identity, backup, network, and security guidance.
+Review and independently validate third-party guidance, generated scripts, and
+operational changes before use. Active defense, firewall changes, process
+termination, service changes, and scheduled tasks require appropriate
+authorization and Windows permissions.
